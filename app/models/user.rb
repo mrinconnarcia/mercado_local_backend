@@ -1,7 +1,8 @@
 class User < ApplicationRecord
   has_secure_password
+  has_many :businesses, dependent: :destroy
 
-  enum :role, { customer: 0, business_owner: 1, admin: 2 }
+  enum :role, customer: 0, business_owner: 1, admin: 2
 
   validates :email, presence: true, uniqueness: true,
             format: { with: URI::MailTo::EMAIL_REGEXP }

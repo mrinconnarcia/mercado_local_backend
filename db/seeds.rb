@@ -7,3 +7,11 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+categories = [ 'Almacén', 'Panadería', 'Verdulería', 'Carnicería', 'Restaurante', 'Farmacia' ]
+
+categories.each do |name|
+  Category.find_or_create_by!(name: name)
+end
+
+puts "#{Category.count} categorías cargadas."
