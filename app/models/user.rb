@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   has_secure_password
   has_many :businesses, dependent: :destroy
+  has_many :orders, dependent: :restrict_with_error
 
   enum :role, customer: 0, business_owner: 1, admin: 2
 
