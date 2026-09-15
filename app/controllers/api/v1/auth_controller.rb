@@ -1,9 +1,16 @@
 module Api
   module V1
     class AuthController < ApplicationController
+      PUBLIC_ROLES = %w[customer business_owner].freeze
+
       def register
         user = User.new(user_params)
-        user.role ||= :customer
+
+        requested_role = params.dig(:user, :role).presence || 'customer'
+        unless PUBLIC_ROLES.include?(requested_role)
+          return render json: { error: 'Rol inválido' }, status: :forbidden
+        end
+        user.role = requested_role
 
         if user.save
           token = JsonWebToken.encode(user_id: user.id)
@@ -30,9 +37,8 @@ module Api
       private
 
       def user_params
-        params.require(:user).permit(:email, :password, :name, :role)
+        params.require(:user).permit(:email, :password, :name)
       end
-
 
       def user_response(user)
         { id: user.id, email: user.email, name: user.name, role: user.role }
@@ -40,3 +46,6 @@ module Api
     end
   end
 end
+
+# para crear un usuario se hace desde consola "rails console"
+# User.create!(email: 'admin@mercadolocal.com', password: 'unaClaveFuerte123', name: 'Admin', role: :admin)

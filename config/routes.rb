@@ -16,12 +16,16 @@ Rails.application.routes.draw do
           patch :toggle_active
         end
         resources :products, only: [ :index, :create ]
+        resources :orders, only: [ :create ]
         resources :orders, only: [ :index ], controller: "business_orders" do
           member do
             patch :update_status
           end
         end
-        resources :orders, only: [ :create ]
+
+        resource :dashboard, only: [ :show ], controller: "dashboard"
+        resources :sales, only: [ :index ]
+        resources :inventory, only: [ :index, :update ]
       end
 
       resources :products, only: [ :show, :update, :destroy ]
