@@ -14,7 +14,7 @@ module Api
         # Con JWT stateless no hay sesión en el servidor para "matar".
         # El logout real lo hace el cliente (Ember) borrando el token guardado.
         # Acá dejamos el endpoint por consistencia de API y para logs/auditoría futura.
-        render json: { message: 'Sesión cerrada' }, status: :ok
+        render json: { message: "Sesión cerrada" }, status: :ok
       end
     end
   end

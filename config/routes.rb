@@ -39,7 +39,7 @@ Rails.application.routes.draw do
       end
 
       namespace :admin do
-        resources :businesses, only: [:index] do
+        resources :businesses, only: [ :index ] do
           member do
             patch :approve
             patch :suspend
@@ -47,15 +47,15 @@ Rails.application.routes.draw do
           end
         end
 
-        resources :users, only: [:index, :show] do
+        resources :users, only: [ :index, :show ] do
           member do
             patch :toggle_active
           end
         end
 
-        resources :orders, only: [:index, :show]
+        resources :orders, only: [ :index, :show ]
 
-        resource :stats, only: [:show], controller: 'stats'
+        resource :stats, only: [ :show ], controller: "stats"
       end
     end
   end

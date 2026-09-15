@@ -9,7 +9,7 @@ module Api
         def require_admin!
           return if current_user.admin?
 
-          render json: { error: 'Acceso restringido a administradores' }, status: :forbidden
+          render json: { error: "Acceso restringido a administradores" }, status: :forbidden
         end
       end
     end

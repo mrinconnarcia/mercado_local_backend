@@ -1,13 +1,14 @@
 module Api
   module V1
     class OrdersController < Api::BaseController
-      before_action :set_order, only: [:show, :add_item, :confirm, :cancel]
-      before_action :authorize_customer!, only: [:show, :add_item, :confirm, :cancel]
+      before_action :set_order, only: [ :show, :add_item, :confirm, :cancel ]
+      before_action :authorize_customer!, only: [ :show, :add_item, :confirm, :cancel ]
 
       # GET /api/v1/orders  -> pedidos del cliente logueado
       def index
         orders = current_user.orders.includes(:business, order_items: :product).order(created_at: :desc)
-        render json: orders.map { |o| order_json(o) }
+        # render json: orders.map { |o| order_json(o) }
+        render json: paginated_response(orders, ->(o) { order_json(o) })
       end
 
       # GET /api/v1/orders/:id
@@ -21,7 +22,7 @@ module Api
         order = current_user.orders.create!(business: business, status: :pending, total: 0)
         render json: order_json(order, detailed: true), status: :created
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Negocio no encontrado' }, status: :not_found
+        render json: { error: "Negocio no encontrado" }, status: :not_found
       end
 
       # POST /api/v1/orders/:id/add_item
@@ -39,13 +40,13 @@ module Api
           render json: { errors: item.errors.full_messages }, status: :unprocessable_entity
         end
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Producto no encontrado en este negocio' }, status: :not_found
+        render json: { error: "Producto no encontrado en este negocio" }, status: :not_found
       end
 
       # PATCH /api/v1/orders/:id/confirm  -> el cliente confirma el carrito y lo envía al negocio
       def confirm
         return render_not_editable unless @order.pending?
-        return render json: { error: 'El carrito está vacío' }, status: :unprocessable_entity if @order.order_items.empty?
+        return render json: { error: "El carrito está vacío" }, status: :unprocessable_entity if @order.order_items.empty?
 
         # Se mantiene en "pending": ya está confirmado por el cliente,
         # y "pending" pasa a significar "esperando que el negocio lo acepte".
@@ -54,8 +55,8 @@ module Api
 
       # PATCH /api/v1/orders/:id/cancel
       def cancel
-        unless @order.can_transition_to?('cancelled')
-          return render json: { error: 'Este pedido ya no se puede cancelar' }, status: :unprocessable_entity
+        unless @order.can_transition_to?("cancelled")
+          return render json: { error: "Este pedido ya no se puede cancelar" }, status: :unprocessable_entity
         end
 
         @order.update!(status: :cancelled)
@@ -67,17 +68,17 @@ module Api
       def set_order
         @order = Order.find(params[:id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Pedido no encontrado' }, status: :not_found
+        render json: { error: "Pedido no encontrado" }, status: :not_found
       end
 
       def authorize_customer!
         return if @order.user_id == current_user.id || current_user.admin?
 
-        render json: { error: 'No tenés permisos sobre este pedido' }, status: :forbidden
+        render json: { error: "No tenés permisos sobre este pedido" }, status: :forbidden
       end
 
       def render_not_editable
-        render json: { error: 'Este pedido ya no admite cambios' }, status: :unprocessable_entity
+        render json: { error: "Este pedido ya no admite cambios" }, status: :unprocessable_entity
       end
 
       def order_json(order, detailed: false)

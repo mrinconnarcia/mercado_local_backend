@@ -2,14 +2,15 @@ module Api
   module V1
     module Admin
       class BusinessesController < Admin::BaseController
-        before_action :set_business, only: [:approve, :suspend, :reactivate]
+        before_action :set_business, only: [ :approve, :suspend, :reactivate ]
 
         # GET /api/v1/admin/businesses?status=pending
         def index
           businesses = Business.includes(:category, :user).order(created_at: :desc)
           businesses = businesses.where(status: params[:status]) if params[:status].present?
 
-          render json: businesses.map { |b| business_json(b) }
+          # render json: businesses.map { |b| business_json(b) }
+          render json: paginated_response(businesses, ->(b) { business_json(b) })
         end
 
         # PATCH /api/v1/admin/businesses/:id/approve
@@ -35,7 +36,7 @@ module Api
         def set_business
           @business = Business.find(params[:id])
         rescue ActiveRecord::RecordNotFound
-          render json: { error: 'Negocio no encontrado' }, status: :not_found
+          render json: { error: "Negocio no encontrado" }, status: :not_found
         end
 
         def business_json(business)

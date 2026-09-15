@@ -6,9 +6,9 @@ module Api
       def register
         user = User.new(user_params)
 
-        requested_role = params.dig(:user, :role).presence || 'customer'
+        requested_role = params.dig(:user, :role).presence || "customer"
         unless PUBLIC_ROLES.include?(requested_role)
-          return render json: { error: 'Rol inválido' }, status: :forbidden
+          return render json: { error: "Rol inválido" }, status: :forbidden
         end
         user.role = requested_role
 
@@ -25,12 +25,12 @@ module Api
 
         if user&.authenticate(params[:password])
           unless user.active?
-            return render json: { error: 'Cuenta desactivada' }, status: :forbidden
+            return render json: { error: "Cuenta desactivada" }, status: :forbidden
           end
           token = JsonWebToken.encode(user_id: user.id)
           render json: { token: token, user: user_response(user) }, status: :ok
         else
-          render json: { error: 'Email o contraseña inválidos' }, status: :unauthorized
+          render json: { error: "Email o contraseña inválidos" }, status: :unauthorized
         end
       end
 

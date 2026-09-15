@@ -25,13 +25,13 @@ module Api
             orders: {
               total: Order.count,
               pending: Order.pending.count,
-              in_progress: Order.where(status: [:accepted, :preparing, :ready]).count,
+              in_progress: Order.where(status: [ :accepted, :preparing, :ready ]).count,
               delivered: Order.delivered.count,
               cancelled: Order.cancelled.count
             },
             revenue: {
               total: Order.delivered.sum(:total).to_f,
-              last_30_days: Order.delivered.where('updated_at >= ?', 30.days.ago).sum(:total).to_f
+              last_30_days: Order.delivered.where("updated_at >= ?", 30.days.ago).sum(:total).to_f
             }
           }
         end

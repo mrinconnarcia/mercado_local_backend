@@ -3,7 +3,7 @@ module Api
     class BusinessOrdersController < Api::BaseController
       before_action :set_business
       before_action :authorize_owner!
-      before_action :set_order, only: [:update_status]
+      before_action :set_order, only: [ :update_status ]
 
       # GET /api/v1/businesses/:business_id/orders
       def index
@@ -22,8 +22,19 @@ module Api
           }, status: :unprocessable_entity
         end
 
-        @order.update!(status: new_status)
+        case new_status
+        when "accepted"
+          OrderProcessor.accept!(@order)
+        when "cancelled"
+          OrderProcessor.restore_stock!(@order) unless @order.pending?
+          @order.update!(status: :cancelled)
+        else
+          @order.update!(status: new_status)
+        end
+
         render json: order_json(@order, detailed: true)
+      rescue OrderProcessor::InsufficientStock => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       private
@@ -31,19 +42,19 @@ module Api
       def set_business
         @business = Business.find(params[:business_id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Negocio no encontrado' }, status: :not_found
+        render json: { error: "Negocio no encontrado" }, status: :not_found
       end
 
       def set_order
         @order = @business.orders.find(params[:id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Pedido no encontrado' }, status: :not_found
+        render json: { error: "Pedido no encontrado" }, status: :not_found
       end
 
       def authorize_owner!
         return if @business.user_id == current_user.id || current_user.admin?
 
-        render json: { error: 'No tenés permisos sobre este negocio' }, status: :forbidden
+        render json: { error: "No tenés permisos sobre este negocio" }, status: :forbidden
       end
 
       def order_json(order, detailed: false)

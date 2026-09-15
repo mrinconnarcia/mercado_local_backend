@@ -1,18 +1,19 @@
 module Api
   module V1
     class BusinessesController < Api::BaseController
-      skip_before_action :authenticate_request, only: [:index, :show]
+      skip_before_action :authenticate_request, only: [ :index, :show ]
 
-      before_action :set_business, only: [:show, :update, :toggle_active]
-      before_action :authorize_owner!, only: [:update, :toggle_active]
+      before_action :set_business, only: [ :show, :update, :toggle_active ]
+      before_action :authorize_owner!, only: [ :update, :toggle_active ]
 
       # GET /api/v1/businesses
       def index
         businesses = Business.visible.includes(:category)
         businesses = businesses.where(category_id: params[:category_id]) if params[:category_id].present?
-        businesses = businesses.where('name ILIKE ?', "%#{params[:q]}%") if params[:q].present?
+        businesses = businesses.where("name ILIKE ?", "%#{params[:q]}%") if params[:q].present?
 
-        render json: businesses.map { |b| business_json(b) }
+        # render json: businesses.map { |b| business_json(b) }
+        render json: paginated_response(businesses, ->(b) { business_json(b) })
       end
 
       # GET /api/v1/businesses/:id
@@ -51,13 +52,13 @@ module Api
       def set_business
         @business = Business.find(params[:id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Negocio no encontrado' }, status: :not_found
+        render json: { error: "Negocio no encontrado" }, status: :not_found
       end
 
       def authorize_owner!
         return if @business.user_id == current_user.id || current_user.admin?
 
-        render json: { error: 'No tenés permisos sobre este negocio' }, status: :forbidden
+        render json: { error: "No tenés permisos sobre este negocio" }, status: :forbidden
       end
 
       def business_params

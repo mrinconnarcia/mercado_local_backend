@@ -8,7 +8,7 @@ module Api
           orders = orders.where(status: params[:status]) if params[:status].present?
           orders = orders.where(business_id: params[:business_id]) if params[:business_id].present?
 
-          render json: orders.limit(200).map { |o| order_json(o) }
+          render json: paginated_response(orders, ->(o) { order_json(o) })
         end
 
         # GET /api/v1/admin/orders/:id
@@ -16,7 +16,7 @@ module Api
           order = Order.includes(order_items: :product).find(params[:id])
           render json: order_json(order, detailed: true)
         rescue ActiveRecord::RecordNotFound
-          render json: { error: 'Pedido no encontrado' }, status: :not_found
+          render json: { error: "Pedido no encontrado" }, status: :not_found
         end
 
         private

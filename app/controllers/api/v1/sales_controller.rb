@@ -8,8 +8,8 @@ module Api
       def index
         sales = @business.orders.delivered.includes(order_items: :product).order(updated_at: :desc)
 
-        sales = sales.where('updated_at >= ?', params[:from]) if params[:from].present?
-        sales = sales.where('updated_at <= ?', params[:to]) if params[:to].present?
+        sales = sales.where("updated_at >= ?", params[:from]) if params[:from].present?
+        sales = sales.where("updated_at <= ?", params[:to]) if params[:to].present?
 
         render json: {
           total_revenue: sales.sum(:total).to_f,
@@ -23,13 +23,13 @@ module Api
       def set_business
         @business = Business.find(params[:business_id])
       rescue ActiveRecord::RecordNotFound
-        render json: { error: 'Negocio no encontrado' }, status: :not_found
+        render json: { error: "Negocio no encontrado" }, status: :not_found
       end
 
       def authorize_owner!
         return if @business.user_id == current_user.id || current_user.admin?
 
-        render json: { error: 'No tenés permisos sobre este negocio' }, status: :forbidden
+        render json: { error: "No tenés permisos sobre este negocio" }, status: :forbidden
       end
 
       def sale_json(order)
