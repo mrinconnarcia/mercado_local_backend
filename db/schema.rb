@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_13_232205) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_16_155708) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -65,6 +65,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_232205) do
     t.index ["slug"], name: "index_categories_on_slug", unique: true
   end
 
+  create_table "notifications", force: :cascade do |t|
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.bigint "notifiable_id"
+    t.string "notifiable_type"
+    t.string "notification_type", null: false
+    t.boolean "read", default: false, null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable"
+    t.index ["user_id", "read"], name: "index_notifications_on_user_id_and_read"
+    t.index ["user_id"], name: "index_notifications_on_user_id"
+  end
+
   create_table "order_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "order_id", null: false
@@ -78,6 +93,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_232205) do
 
   create_table "orders", force: :cascade do |t|
     t.bigint "business_id", null: false
+    t.datetime "confirmed_at"
     t.datetime "created_at", null: false
     t.integer "status", default: 0, null: false
     t.decimal "total", precision: 10, scale: 2, default: "0.0", null: false
@@ -114,6 +130,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_13_232205) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "businesses", "categories"
   add_foreign_key "businesses", "users"
+  add_foreign_key "notifications", "users"
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "products"
   add_foreign_key "orders", "businesses"

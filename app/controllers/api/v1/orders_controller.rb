@@ -48,18 +48,35 @@ module Api
         return render_not_editable unless @order.pending?
         return render json: { error: "El carrito está vacío" }, status: :unprocessable_entity if @order.order_items.empty?
 
-        # Se mantiene en "pending": ya está confirmado por el cliente,
-        # y "pending" pasa a significar "esperando que el negocio lo acepte".
+        if @order.confirmed?
+          return render json: { error: "Este pedido ya fue confirmado" }, status: :unprocessable_entity
+        end
+
+        @order.update!(confirmed_at: Time.current)
+
+        Notifier.notify(
+          user: @order.business.user,
+          type: "new_order",
+          notifiable: @order
+        )
+
         render json: order_json(@order, detailed: true)
       end
 
-      # PATCH /api/v1/orders/:id/cancel
       def cancel
         unless @order.can_transition_to?("cancelled")
           return render json: { error: "Este pedido ya no se puede cancelar" }, status: :unprocessable_entity
         end
 
+        OrderProcessor.restore_stock!(@order) unless @order.pending?
         @order.update!(status: :cancelled)
+
+        Notifier.notify(
+          user: @order.business.user,
+          type: "cancelled_by_customer",
+          notifiable: @order
+        )
+
         render json: order_json(@order, detailed: true)
       end
 

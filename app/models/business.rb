@@ -3,6 +3,7 @@ class Business < ApplicationRecord
   belongs_to :category
   has_many :products, dependent: :destroy
   has_many :orders, dependent: :restrict_with_error
+  has_many :notifications, as: :notifiable, dependent: :destroy
 
   enum :status, pending: 0, approved: 1, suspended: 2
 

@@ -16,12 +16,13 @@ module Api
         # PATCH /api/v1/admin/businesses/:id/approve
         def approve
           @business.update!(status: :approved)
+          Notifier.notify(user: @business.user, type: "business_approved", notifiable: @business)
           render json: business_json(@business)
         end
 
-        # PATCH /api/v1/admin/businesses/:id/suspend
         def suspend
           @business.update!(status: :suspended)
+          Notifier.notify(user: @business.user, type: "business_suspended", notifiable: @business)
           render json: business_json(@business)
         end
 

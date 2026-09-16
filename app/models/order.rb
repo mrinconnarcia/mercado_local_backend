@@ -3,6 +3,11 @@ class Order < ApplicationRecord
   belongs_to :business
   has_many :order_items, dependent: :destroy
   has_many :products, through: :order_items
+  has_many :notifications, as: :notifiable, dependent: :destroy
+
+  def confirmed?
+    confirmed_at.present?
+  end
 
   enum :status,
     pending: 0,

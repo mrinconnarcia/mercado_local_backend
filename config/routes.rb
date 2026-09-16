@@ -38,6 +38,15 @@ Rails.application.routes.draw do
         end
       end
 
+      resources :notifications, only: [ :index ] do
+        member do
+          patch :read, action: :mark_read
+        end
+        collection do
+          patch :read_all, action: :mark_all_read
+        end
+      end
+
       namespace :admin do
         resources :businesses, only: [ :index ] do
           member do
