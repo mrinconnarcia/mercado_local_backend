@@ -35,4 +35,8 @@ class Order < ApplicationRecord
   def recalculate_total!
     update!(total: order_items.sum { |item| item.quantity * item.unit_price })
   end
+
+  def total_with_delivery
+    (total || 0) + (delivery_fee || 0)
+  end
 end

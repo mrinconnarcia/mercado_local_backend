@@ -3,7 +3,7 @@ module Api
     class BusinessesController < Api::BaseController
       skip_before_action :authenticate_request, only: [ :index, :show ]
 
-      before_action :set_business, only: [ :show, :update, :toggle_active ]
+      before_action :set_business, only: [ :show, :update, :toggle_active, :delivery_check ]
       before_action :authorize_owner!, only: [ :update, :toggle_active ]
 
       # GET /api/v1/businesses
@@ -19,6 +19,21 @@ module Api
       # GET /api/v1/businesses/:id
       def show
         render json: business_json(@business, detailed: true)
+      end
+
+      # GET /api/v1/businesses/:id/delivery_check?lat=X&lng=Y
+      def delivery_check
+        distance = @business.distance_to(params[:lat], params[:lng])
+
+        if distance.nil?
+          return render json: { error: "El negocio no tiene ubicación configurada" }, status: :unprocessable_entity
+        end
+
+        render json: {
+          delivers: @business.delivers_to?(params[:lat], params[:lng]),
+          distance_km: distance,
+          estimated_fee: @business.delivery_fee_for(params[:lat], params[:lng], 0)
+        }
       end
 
       # POST /api/v1/businesses
@@ -62,7 +77,11 @@ module Api
       end
 
       def business_params
-        params.require(:business).permit(:name, :description, :address, :phone, :category_id)
+        params.require(:business).permit(
+          :name, :description, :address, :phone, :category_id,
+          :latitude, :longitude, :delivery_radius_km,
+          :delivery_base_fee, :delivery_fee_per_km, :free_delivery_over
+        )
       end
 
       def business_json(business, detailed: false)

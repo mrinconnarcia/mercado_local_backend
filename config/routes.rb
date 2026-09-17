@@ -14,6 +14,7 @@ Rails.application.routes.draw do
       resources :businesses, only: [ :index, :show, :create, :update ] do
         member do
           patch :toggle_active
+          get :delivery_check
         end
         resources :products, only: [ :index, :create ]
         resources :orders, only: [ :create ]

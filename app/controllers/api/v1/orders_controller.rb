@@ -16,10 +16,22 @@ module Api
         render json: order_json(@order, detailed: true)
       end
 
-      # POST /api/v1/businesses/:business_id/orders  -> crea el carrito (pedido en estado pending)
       def create
         business = Business.find(params[:business_id])
-        order = current_user.orders.create!(business: business, status: :pending, total: 0)
+
+        unless business.delivers_to?(params[:delivery_latitude], params[:delivery_longitude])
+          return render json: { error: "Este negocio no realiza envíos a tu ubicación" }, status: :unprocessable_entity
+        end
+
+        order = current_user.orders.create!(
+          business: business,
+          status: :pending,
+          total: 0,
+          delivery_address: params[:delivery_address],
+          delivery_latitude: params[:delivery_latitude],
+          delivery_longitude: params[:delivery_longitude]
+        )
+
         render json: order_json(order, detailed: true), status: :created
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Negocio no encontrado" }, status: :not_found
@@ -52,16 +64,14 @@ module Api
           return render json: { error: "Este pedido ya fue confirmado" }, status: :unprocessable_entity
         end
 
-        @order.update!(confirmed_at: Time.current)
+        fee = @order.business.delivery_fee_for(@order.delivery_latitude, @order.delivery_longitude, @order.total)
+        @order.update!(confirmed_at: Time.current, delivery_fee: fee)
 
-        Notifier.notify(
-          user: @order.business.user,
-          type: "new_order",
-          notifiable: @order
-        )
+        Notifier.notify(user: @order.business.user, type: "new_order", notifiable: @order)
 
         render json: order_json(@order, detailed: true)
       end
+
 
       def cancel
         unless @order.can_transition_to?("cancelled")
@@ -103,6 +113,8 @@ module Api
           id: order.id,
           status: order.status,
           total: order.total.to_f,
+          delivery_fee: order.delivery_fee.to_f,
+          total_with_delivery: order.total_with_delivery.to_f,
           business: order.business.name,
           created_at: order.created_at
         }
