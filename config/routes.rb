@@ -23,10 +23,12 @@ Rails.application.routes.draw do
           end
         end
 
+        resources :business_hours, only: [ :index ], controller: "business_hours"
         resource :dashboard, only: [ :show ], controller: "dashboard"
         resources :sales, only: [ :index ]
         resources :inventory, only: [ :index, :update ]
       end
+      put "businesses/:business_id/business_hours", to: "business_hours#update_all"
 
       resources :products, only: [ :show, :update, :destroy ]
 

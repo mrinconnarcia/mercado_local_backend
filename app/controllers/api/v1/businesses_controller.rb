@@ -72,7 +72,8 @@ module Api
           address: business.address,
           category: business.category.name,
           active: business.active,
-          status: business.status
+          status: business.status,
+          open_now: business.active? && business.open_now?
         }
         return base unless detailed
 
