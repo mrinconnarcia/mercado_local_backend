@@ -4,6 +4,7 @@ class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
   has_many :products, through: :order_items
   has_many :notifications, as: :notifiable, dependent: :destroy
+  has_one :review, dependent: :destroy
 
   def confirmed?
     confirmed_at.present?
@@ -38,5 +39,9 @@ class Order < ApplicationRecord
 
   def total_with_delivery
     (total || 0) + (delivery_fee || 0)
+  end
+
+  def reviewable?
+    delivered? && review.nil?
   end
 end

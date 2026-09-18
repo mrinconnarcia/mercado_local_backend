@@ -5,6 +5,7 @@ class Business < ApplicationRecord
   has_many :orders, dependent: :restrict_with_error
   has_many :notifications, as: :notifiable, dependent: :destroy
   has_many :business_hours, dependent: :destroy
+  has_many :reviews, dependent: :destroy
 
   enum :status, pending: 0, approved: 1, suspended: 2
 
@@ -58,6 +59,14 @@ class Business < ApplicationRecord
     per_km = delivery_fee_per_km || 0
 
     (base + (distance * per_km)).round(2)
+  end
+
+  def average_rating
+    reviews.average(:rating)&.round(1)
+  end
+
+  def reviews_count
+    reviews.count
   end
 
   private

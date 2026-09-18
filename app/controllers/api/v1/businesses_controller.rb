@@ -92,7 +92,9 @@ module Api
           category: business.category.name,
           active: business.active,
           status: business.status,
-          open_now: business.active? && business.open_now?
+          open_now: business.active? && business.open_now?,
+          average_rating: business.average_rating,
+          reviews_count: business.reviews_count
         }
         return base unless detailed
 

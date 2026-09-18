@@ -28,6 +28,7 @@ Rails.application.routes.draw do
         resource :dashboard, only: [ :show ], controller: "dashboard"
         resources :sales, only: [ :index ]
         resources :inventory, only: [ :index, :update ]
+        resources :reviews, only: [ :index ]
       end
       put "businesses/:business_id/business_hours", to: "business_hours#update_all"
 
@@ -39,6 +40,7 @@ Rails.application.routes.draw do
           patch :confirm
           patch :cancel
         end
+        resource :review, only: [ :create ], controller: "reviews"
       end
 
       resources :notifications, only: [ :index ] do
