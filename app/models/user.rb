@@ -10,7 +10,17 @@ class User < ApplicationRecord
   validates :email, presence: true, uniqueness: true,
             format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :name, presence: true
-  validates :password, length: { minimum: 6 }, if: -> { new_record? || !password.nil? }
-
+  validates :password, length: { minimum: 8 }, if: -> { new_record? || !password.nil? }
+  validate :password_complexity, if: -> { new_record? || !password.nil? }
   before_validation { self.email = email.downcase.strip if email.present? }
+
+  private
+
+  def password_complexity
+    return if password.blank?
+
+    unless password.match?(/[A-Z]/) && password.match?(/[a-z]/) && password.match?(/[0-9]/)
+      errors.add(:password, "debe contener al menos una mayúscula, una minúscula y un número")
+    end
+  end
 end

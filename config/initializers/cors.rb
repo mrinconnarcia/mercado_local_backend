@@ -1,8 +1,8 @@
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins "http://localhost:4000" # puerto default de Ember
+    origins ENV.fetch("ALLOWED_ORIGINS", "http://localhost:4000").split(",")
 
-    resource "*",
+    resource "/api/*",
       headers: :any,
       expose: [ "Authorization" ],
       methods: [ :get, :post, :put, :patch, :delete, :options, :head ]

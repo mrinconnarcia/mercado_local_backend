@@ -1,15 +1,20 @@
 class JsonWebToken
-  SECRET_KEY = Rails.application.credentials.secret_key_base || ENV["SECRET_KEY_BASE"]
+  ALGORITHM = "HS256".freeze
+  SECRET_KEY = Rails.application.credentials.dig(:jwt, :secret_key)
 
   def self.encode(payload, exp = 24.hours.from_now)
+    raise "JWT secret no configurado" if SECRET_KEY.blank?
+
+    payload = payload.dup
     payload[:exp] = exp.to_i
-    JWT.encode(payload, SECRET_KEY)
+    payload[:iat] = Time.now.to_i
+    JWT.encode(payload, SECRET_KEY, ALGORITHM)
   end
 
   def self.decode(token)
-    body = JWT.decode(token, SECRET_KEY)[0]
+    body = JWT.decode(token, SECRET_KEY, true, algorithm: ALGORITHM)[0]
     HashWithIndifferentAccess.new(body)
-  rescue JWT::ExpiredSignature, JWT::DecodeError
+  rescue JWT::ExpiredSignature, JWT::DecodeError, JWT::VerificationError
     nil
   end
 end

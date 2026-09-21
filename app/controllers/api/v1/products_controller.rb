@@ -11,8 +11,8 @@ module Api
       def index
         products = @business.products
         products = products.visible unless owner_or_admin?
+
         render json: paginated_response(products, ->(p) { product_json(p) })
-        # render json: products.map { |p| product_json(p) }
       end
 
       # GET /api/v1/products/:id
@@ -27,16 +27,18 @@ module Api
         if product.save
           render json: product_json(product), status: :created
         else
-          render json: { errors: product.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: product.errors.full_messages },
+                 status: :unprocessable_entity
         end
       end
 
-      # PATCH/PUT /api/v1/products/:id
+      # PATCH /api/v1/products/:id
       def update
         if @product.update(product_params)
           render json: product_json(@product)
         else
-          render json: { errors: @product.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: @product.errors.full_messages },
+                 status: :unprocessable_entity
         end
       end
 
@@ -62,17 +64,29 @@ module Api
 
       def authorize_owner!
         business = @business || @product.business
-        return if business.user_id == current_user.id || current_user.admin?
 
-        render json: { error: "No tenés permisos sobre este producto" }, status: :forbidden
+        return if current_user.admin?
+        return if business.user_id == current_user.id
+
+        render json: { error: "No tenés permisos sobre este producto" },
+               status: :forbidden
       end
 
       def owner_or_admin?
-        current_user.present? && (current_user.id == @business.user_id || current_user.admin?)
+        return false unless current_user
+
+        current_user.admin? || @business.user_id == current_user.id
       end
 
       def product_params
-        params.require(:product).permit(:name, :description, :price, :available, :stock, :image)
+        params.require(:product).permit(
+          :name,
+          :description,
+          :price,
+          :available,
+          :stock,
+          :image
+        )
       end
 
       def product_json(product)

@@ -35,6 +35,10 @@ class Notifier
     "business_suspended" => {
       title: "Tu negocio fue suspendido",
       body: ->(business) { "#{business.name} fue suspendido. Contactanos para más información." }
+    },
+    "new_business_pending" => {
+      title: "Nuevo negocio esperando aprobación",
+      body: ->(business) { "#{business.name} (#{business.user.name}) se registró y espera aprobación" }
     }
   }.freeze
 

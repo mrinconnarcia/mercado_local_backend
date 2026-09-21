@@ -21,6 +21,12 @@ module Api
         render json: business_json(@business, detailed: true)
       end
 
+      # GET /api/v1/businesses/mine
+      def mine
+        businesses = current_user.businesses.includes(:category).order(created_at: :desc)
+        render json: businesses.map { |b| business_json(b, detailed: true) }
+      end
+
       # GET /api/v1/businesses/:id/delivery_check?lat=X&lng=Y
       def delivery_check
         distance = @business.distance_to(params[:lat], params[:lng])
@@ -41,6 +47,7 @@ module Api
         business = current_user.businesses.new(business_params)
 
         if business.save
+          notify_admins_new_business(business)
           render json: business_json(business, detailed: true), status: :created
         else
           render json: { errors: business.errors.full_messages }, status: :unprocessable_entity
@@ -63,6 +70,12 @@ module Api
       end
 
       private
+
+      def notify_admins_new_business(business)
+        User.admin.find_each do |admin|
+          Notifier.notify(user: admin, type: "new_business_pending", notifiable: business)
+        end
+      end
 
       def set_business
         @business = Business.find(params[:id])

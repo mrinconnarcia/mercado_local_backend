@@ -11,6 +11,8 @@ Rails.application.routes.draw do
 
       resources :categories, only: [ :index ]
 
+      get "businesses/mine", to: "businesses#mine"
+
       resources :businesses, only: [ :index, :show, :create, :update ] do
         member do
           patch :toggle_active
