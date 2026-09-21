@@ -34,6 +34,41 @@ module Api
         end
       end
 
+      # POST /api/v1/auth/forgot_password
+      def forgot_password
+        user = User.find_by(email: params[:email]&.downcase&.strip)
+
+        if user
+          raw_token = SecureRandom.urlsafe_base64(32)
+          user.update!(reset_password_token: Digest::SHA256.hexdigest(raw_token), reset_password_sent_at: Time.current)
+          PasswordMailer.reset_instructions(user, raw_token).deliver_later
+        end
+
+        # Mismo mensaje exista o no el email — evita que alguien use este endpoint
+        # para averiguar qué emails están registrados en tu sistema.
+        render json: { message: "Si el email existe, te enviamos instrucciones para restablecer tu contraseña." }
+      end
+
+      # POST /api/v1/auth/reset_password
+      def reset_password
+        hashed = Digest::SHA256.hexdigest(params[:token].to_s)
+        user = User.find_by(reset_password_token: hashed)
+
+        if user.nil? || user.reset_password_sent_at < 1.hour.ago
+          return render json: { error: "El enlace es inválido o expiró. Pedí uno nuevo." }, status: :unprocessable_entity
+        end
+
+        user.password = params[:password]
+        user.reset_password_token = nil
+        user.reset_password_sent_at = nil
+
+        if user.save
+          render json: { message: "Contraseña actualizada. Ya podés iniciar sesión." }
+        else
+          render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
       private
 
       def user_params
