@@ -12,6 +12,11 @@ class Business < ApplicationRecord
   validates :name, presence: true
   validates :address, presence: true
 
+  validates :discount_percentage, numericality: {
+    greater_than_or_equal_to: 0,
+    less_than_or_equal_to: 100
+  }, allow_nil: true
+
   scope :visible, -> { where(active: true, status: :approved) }
 
   before_validation :set_owner_as_business_owner, on: :create
@@ -59,6 +64,13 @@ class Business < ApplicationRecord
     per_km = delivery_fee_per_km || 0
 
     (base + (distance * per_km)).round(2)
+  end
+
+  def calculate_discount(subtotal)
+    pct = discount_percentage.to_f
+    return 0.0 if pct <= 0
+
+    (subtotal * (pct / 100.0)).round(2)
   end
 
   def average_rating

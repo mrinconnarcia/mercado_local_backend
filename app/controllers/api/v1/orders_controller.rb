@@ -23,13 +23,21 @@ module Api
           return render json: { error: "Este negocio no realiza envíos a tu ubicación" }, status: :unprocessable_entity
         end
 
+        # ✅ Calcular el envío estimado
+        estimated_fee = business.delivery_fee_for(
+          params[:delivery_latitude],
+          params[:delivery_longitude],
+          0 # subtotal aún es 0
+        )
+
         order = current_user.orders.create!(
           business: business,
           status: :pending,
           total: 0,
           delivery_address: params[:delivery_address],
           delivery_latitude: params[:delivery_latitude],
-          delivery_longitude: params[:delivery_longitude]
+          delivery_longitude: params[:delivery_longitude],
+          delivery_fee: estimated_fee # ✅ Guardar el envío estimado
         )
 
         render json: order_json(order, detailed: true), status: :created
@@ -41,9 +49,23 @@ module Api
       def add_item
         return render_not_editable unless @order.pending?
 
-        product = @order.business.products.find(params[:product_id])
+        product  = @order.business.products.find(params[:product_id])
+        quantity = params.fetch(:quantity, 1).to_i
+
+        if quantity < 1
+          return render json: { error: "La cantidad debe ser al menos 1" }, status: :unprocessable_entity
+        end
+
         item = @order.order_items.find_or_initialize_by(product: product)
-        item.quantity = (item.quantity || 0) + params.fetch(:quantity, 1).to_i
+        new_quantity = (item.new_record? ? 0 : item.quantity) + quantity
+
+        if new_quantity > product.stock
+          return render json: {
+            error: "Solo quedan #{product.stock} unidades de #{product.name}"
+          }, status: :unprocessable_entity
+        end
+
+        item.quantity = new_quantity
 
         if item.save
           @order.recalculate_total!
@@ -65,13 +87,23 @@ module Api
         end
 
         fee = @order.business.delivery_fee_for(@order.delivery_latitude, @order.delivery_longitude, @order.total)
-        @order.update!(confirmed_at: Time.current, delivery_fee: fee)
+
+        if fee.nil?
+          return render json: { error: "Tu ubicación está fuera del rango de entrega de este negocio" }, status: :unprocessable_entity
+        end
+
+        discount_amount = @order.business.calculate_discount(@order.total)
+
+        @order.update!(
+          confirmed_at: Time.current,
+          delivery_fee: fee,
+          discount: discount_amount
+        )
 
         Notifier.notify(user: @order.business.user, type: "new_order", notifiable: @order)
 
         render json: order_json(@order, detailed: true)
       end
-
 
       def cancel
         unless @order.can_transition_to?("cancelled")
@@ -114,6 +146,7 @@ module Api
           status: order.status,
           total: order.total.to_f,
           delivery_fee: order.delivery_fee.to_f,
+          discount: order.respond_to?(:discount) ? (order.discount || 0).to_f : 0.0, # ✅ Seguro
           total_with_delivery: order.total_with_delivery.to_f,
           business: order.business.name,
           created_at: order.created_at

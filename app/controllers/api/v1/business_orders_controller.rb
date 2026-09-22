@@ -25,16 +25,21 @@ module Api
         case new_status
         when "accepted"
           OrderProcessor.accept!(@order)
+          Notifier.notify(user: @order.user, type: "accepted", notifiable: @order) # ✅
         when "cancelled"
           OrderProcessor.restore_stock!(@order) unless @order.pending?
           @order.update!(status: :cancelled)
+          Notifier.notify(user: @order.user, type: "cancelled_by_business", notifiable: @order) # ✅
         else
-          @order.update!(status: new_status)
+          @order.update!(status: new_status)   # preparing, ready, delivered
+          Notifier.notify(user: @order.user, type: new_status, notifiable: @order) # ✅
         end
 
         render json: order_json(@order, detailed: true)
       rescue OrderProcessor::InsufficientStock => e
         render json: { error: e.message }, status: :unprocessable_entity
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.record.errors.full_messages.join(", ") }, status: :unprocessable_entity
       end
 
       private
@@ -62,6 +67,9 @@ module Api
           id: order.id,
           status: order.status,
           total: order.total.to_f,
+          delivery_fee: order.delivery_fee.to_f, # ✅ AGREGAR
+          total_with_delivery: order.total_with_delivery.to_f, # ✅ AGREGAR
+          discount: (order.discount || 0).to_f, # ✅ AGREGAR
           customer: order.user.name,
           created_at: order.created_at
         }

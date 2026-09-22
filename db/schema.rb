@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_21_014845) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_002511) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -63,6 +63,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_014845) do
     t.decimal "delivery_fee_per_km", precision: 10, scale: 2
     t.decimal "delivery_radius_km", precision: 5, scale: 2
     t.text "description"
+    t.decimal "discount_percentage", precision: 5, scale: 2, default: "0.0", null: false
     t.decimal "free_delivery_over", precision: 10, scale: 2
     t.decimal "latitude", precision: 10, scale: 6
     t.decimal "longitude", precision: 10, scale: 6
@@ -117,6 +118,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_014845) do
     t.decimal "delivery_fee", precision: 10, scale: 2
     t.decimal "delivery_latitude", precision: 10, scale: 6
     t.decimal "delivery_longitude", precision: 10, scale: 6
+    t.decimal "discount", precision: 8, scale: 2, default: "0.0", null: false
     t.integer "status", default: 0, null: false
     t.decimal "total", precision: 10, scale: 2, default: "0.0", null: false
     t.datetime "updated_at", null: false

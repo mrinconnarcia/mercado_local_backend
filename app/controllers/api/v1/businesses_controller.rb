@@ -93,7 +93,8 @@ module Api
         params.require(:business).permit(
           :name, :description, :address, :phone, :category_id,
           :latitude, :longitude, :delivery_radius_km,
-          :delivery_base_fee, :delivery_fee_per_km, :free_delivery_over
+          :delivery_base_fee, :delivery_fee_per_km, :free_delivery_over,
+          :discount_percentage
         )
       end
 
@@ -102,7 +103,7 @@ module Api
           id: business.id,
           name: business.name,
           address: business.address,
-          category: business.category.name,
+          category: business.category&.name, # ✅ Agregué &. por seguridad
           active: business.active,
           status: business.status,
           open_now: business.active? && business.open_now?,
@@ -114,7 +115,16 @@ module Api
         base.merge(
           description: business.description,
           phone: business.phone,
-          owner_id: business.user_id
+          owner_id: business.user_id,
+
+          # ✅ AGREGA ESTOS CAMPOS PARA QUE EL FRONTEND LOS RECIBA Y LOS MUESTRE
+          latitude: business.latitude,
+          longitude: business.longitude,
+          delivery_radius_km: business.delivery_radius_km,
+          delivery_base_fee: business.delivery_base_fee,
+          delivery_fee_per_km: business.delivery_fee_per_km,
+          free_delivery_over: business.free_delivery_over,
+          discount_percentage: business.discount_percentage
         )
       end
     end
