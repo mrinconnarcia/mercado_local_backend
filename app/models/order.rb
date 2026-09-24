@@ -18,6 +18,8 @@ class Order < ApplicationRecord
     delivered: 4,
     cancelled: 5
 
+  scope :delivered, -> { where(status: :delivered) }
+
   VALID_TRANSITIONS = {
     "pending"   => %w[accepted cancelled],
     "accepted"  => %w[preparing cancelled],

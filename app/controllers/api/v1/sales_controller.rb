@@ -6,13 +6,19 @@ module Api
 
       # GET /api/v1/businesses/:business_id/sales
       def index
-        sales = @business.orders.delivered.includes(order_items: :product).order(updated_at: :desc)
+        sales = @business.orders
+                   .where(status: :delivered)
+                   .includes(order_items: :product)
+                   .order("orders.updated_at" => :desc)
 
-        sales = sales.where("updated_at >= ?", params[:from]) if params[:from].present?
-        sales = sales.where("updated_at <= ?", params[:to]) if params[:to].present?
+        # Filtrar por fechas
+        sales = sales.where("orders.updated_at >= ?", params[:from]) if params[:from].present?
+        sales = sales.where("orders.updated_at <= ?", params[:to]) if params[:to].present?
+
+        total_revenue = sales.sum(:total) + sales.sum(:delivery_fee)
 
         render json: {
-          total_revenue: sales.sum(:total).to_f,
+          total_revenue: total_revenue.to_f,
           count: sales.count,
           sales: sales.map { |o| sale_json(o) }
         }
@@ -36,9 +42,10 @@ module Api
         {
           id: order.id,
           customer: order.user.name,
-          total: order.total.to_f,
+          total: order.total_with_delivery.to_f,
+          discount: (order.discount || 0).to_f,
           delivered_at: order.updated_at,
-          items: order.order_items.map { |i| { name: i.product.name, quantity: i.quantity } }
+          items: order.order_items.map { |i| { name: i.product.name, quantity: i.quantity, unit_price: i.unit_price.to_f } }
         }
       end
     end
