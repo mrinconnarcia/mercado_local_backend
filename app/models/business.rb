@@ -47,11 +47,16 @@ class Business < ApplicationRecord
     (EARTH_RADIUS_KM * c).round(2)
   end
 
+  # app/models/business.rb
   def delivers_to?(lat, lng)
     distance = distance_to(lat, lng)
     return false if distance.nil?
 
-    distance <= (delivery_radius_km || 0)
+    radius = delivery_radius_km.to_f
+
+    return false if radius <= 0
+
+    distance <= radius
   end
 
   def delivery_fee_for(lat, lng, subtotal)

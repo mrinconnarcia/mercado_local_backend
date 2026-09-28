@@ -63,10 +63,6 @@ class Order < ApplicationRecord
   end
 
   def total_with_delivery
-    (total || 0) + (delivery_fee || 0)
-  end
-
-  def total_with_delivery
     subtotal = (total || 0) + (delivery_fee || 0)
     discount_amount = respond_to?(:discount) ? (discount || 0) : 0
     [ subtotal - discount_amount, 0 ].max
