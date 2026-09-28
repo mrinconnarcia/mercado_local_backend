@@ -23,12 +23,15 @@ module Api
           return render json: { error: "Este negocio no realiza envíos a tu ubicación" }, status: :unprocessable_entity
         end
 
-        # ✅ Calcular el envío estimado
         estimated_fee = business.delivery_fee_for(
           params[:delivery_latitude],
           params[:delivery_longitude],
-          0 # subtotal aún es 0
+          0
         )
+
+        if estimated_fee.nil?
+          return render json: { error: "El negocio no tiene configurada su zona de entrega" }, status: :unprocessable_entity
+        end
 
         order = current_user.orders.create!(
           business: business,
@@ -37,7 +40,7 @@ module Api
           delivery_address: params[:delivery_address],
           delivery_latitude: params[:delivery_latitude],
           delivery_longitude: params[:delivery_longitude],
-          delivery_fee: estimated_fee # ✅ Guardar el envío estimado
+          delivery_fee: estimated_fee
         )
 
         render json: order_json(order, detailed: true), status: :created
