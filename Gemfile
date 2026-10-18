@@ -55,4 +55,4 @@ group :development, :test do
   gem "faker"
 end
 
-gem "pagy", "~> 43.6"
+gem "pagy", "~> 43.7"
